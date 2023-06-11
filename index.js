@@ -90,25 +90,21 @@ bot.on("message", async (msg) => {
       );
     };
 
-    setTimeout(
-      async () => {
-        if (isRunning) {
-          sendAlreadyTwoHours(false);
+    setTimeout(async () => {
+      if (isRunning) {
+        sendAlreadyTwoHours(false);
 
-          setInterval(() => {
-            if (isRunning) {
+        setInterval(() => {
+          if (isRunning) {
             sendAlreadyTwoHours(true);
-              } else {
-              clearInterval(this)
-            }
-          }, 180000);
-        } else {
-          clearTimeout(this);
-        }
-      },
-      180000
-      // REQEST_TIMEOUT
-    );
+          } else {
+            clearInterval(this);
+          }
+        }, REQEST_TIMEOUT);
+      } else {
+        clearTimeout(this);
+      }
+    }, REQEST_TIMEOUT);
   };
 
   if (availableIds.includes(chatId)) {
