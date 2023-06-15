@@ -55,35 +55,36 @@ bot.setMyCommands(commands);
 let isRunning;
 
 const availableIds = AVAILABLE_CHAT_IDS;
+let tickets = []
 
 bot.on("message", async (msg) => {
   const text = msg?.text;
   const chatId = msg.chat.id;
 
-  const startBot = async () => {
+  const startBot = async (idOfChat) => {
     isRunning = true;
+    const CHAT_ID = idOfChat
+    await bot.sendSticker(CHAT_ID, stickers.start);
+    bot.sendMessage(CHAT_ID, "Бот запущен, чтобы остановить напишите /stop");
 
-    await bot.sendSticker(chatId, stickers.start);
-    bot.sendMessage(chatId, "Бот запущен, чтобы остановить напишите /stop");
-
-    puppeteerScript(bot, chatId, process.env, stickers);
+    puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets);
 
     setInterval(() => {
       if (isRunning) {
-        puppeteerScript(bot, chatId, process.env, stickers);
+        puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets);
       } else {
         clearInterval(this);
       }
     }, REQEST_INTERVAL);
 
     const sendAlreadyTwoHours = async (secondWarning) => {
-      await bot.sendSticker(chatId, stickers.already2hours);
+      await bot.sendSticker(CHAT_ID, stickers.already2hours);
       console.log(
         secondWarning ? "already many hours..." : "already 2 hours..."
       );
 
       bot.sendMessage(
-        chatId,
+          CHAT_ID,
         `Бот запущен уже ${
           secondWarning ? "много часов :(" : "2 часа"
         }. Выключи бота командой /stop`
@@ -117,10 +118,11 @@ bot.on("message", async (msg) => {
         );
         return;
       } else {
-        startBot();
+        startBot(chatId);
       }
     } else if (text === "/stop") {
       isRunning = false;
+      tickets = []
       await bot.sendSticker(chatId, stickers.stop);
       bot.sendMessage(chatId, "Бот остановлен, для запуска напишите /start");
     } else if (text === "/identify") {
