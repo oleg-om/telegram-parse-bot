@@ -103,6 +103,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
 
         await page.screenshot({ path: "./screenshots/services.png" });
         if (servicesLength && servicesLength > 0 && servicesLength !== SERVICES_LENGTH && tickets !== services) {
+          tickets = services
           await bot.sendSticker(chatId, stickers.talon);
           bot.sendMessage(
             chatId,
