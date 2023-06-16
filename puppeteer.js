@@ -72,8 +72,8 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
 
         await links.click();
 
-        // services
-        const services = await page.evaluate(
+        // tickets
+        const parsedTickets = await page.evaluate(
             (WANTED_SERVICE, SERVICES_CLASS) => {
 
                 const getNumber = (service, wanted) => {
@@ -95,20 +95,52 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
             SERVICES_CLASS
         )
 
-        var SERVICES_LENGTH = 0
+        var PARSED_TICKETS_LENGTH = 0
 
-        const servicesLength = services?.length;
+        const parsedTicketsLength = parsedTickets?.length;
 
-        console.log("servicesLength: ", servicesLength);
+        console.log("parsed tickets length: ", parsedTicketsLength, parsedTickets);
 
         await page.screenshot({ path: "./screenshots/services.png" });
-        if (servicesLength && servicesLength > 0 && servicesLength !== SERVICES_LENGTH && tickets !== services) {
-          tickets = services
-          await bot.sendSticker(chatId, stickers.talon);
-          bot.sendMessage(
-            chatId,
-            `На данный момент талонов: ${servicesLength}: ${services.join(', ')}`
-          );
+
+        // work with tickets
+        if (parsedTicketsLength && parsedTicketsLength > 0 && parsedTicketsLength !== PARSED_TICKETS_LENGTH) {
+          // check ticket is new
+          const excludeNewTickets = (existed, parsed) => {
+            return parsed.reduce((acc,rec)=> {
+              const isExists = existed.find((ser) => ser === rec)
+              if (!isExists) {
+                return [...acc, rec]
+              } else return acc
+            },[])
+          }
+
+          const newTickets = excludeNewTickets(tickets, parsedTickets)
+          const newTicketsLength = newTickets?.length
+
+          console.log('saved tickets', tickets)
+          console.log('filtered only new tickets', newTickets)
+
+          // send new tickets
+          if (newTickets && newTicketsLength) {
+            await bot.sendSticker(chatId, stickers.talon);
+            bot.sendMessage(
+                chatId,
+                `На данный момент ${newTicketsLength} новых талонов: ${newTickets.join(', ')}`
+            );
+
+            // add new services to tickets
+            tickets.push(...newTickets)
+            // remove duplicates
+            const uniqueTickets = tickets.filter((element, index) => {
+              return tickets.indexOf(element) === index;
+            });
+            tickets = uniqueTickets
+
+            console.log('ticket was sent')
+            console.log('new tickets array without duplicates', tickets)
+          }
+
         }
 
         await browser.close();
@@ -151,7 +183,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
       }
     } catch (e) {
       await browser.close();
-
+      tickets = []
       console.log("error", e);
 
       await bot.sendSticker(chatId, stickers.unknown);
@@ -159,7 +191,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
     }
   })();
 };
-
+//
 // const tickets = []
 // puppeteerScript({sendMessage:()=>{}, sendSticker: () => {}}, null, process.env, true, tickets);
 export default puppeteerScript;
