@@ -12,6 +12,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
     WANTED_SERVICE,
     SERVICES_CLASS,
     CATEGORIES_CLASS,
+    iDS_ARRAY
   } = env;
 
   (async () => {
@@ -123,11 +124,13 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
 
           // send new tickets
           if (newTickets && newTicketsLength) {
-            await bot.sendSticker(chatId, stickers.talon);
-            bot.sendMessage(
-                chatId,
-                `На данный момент ${newTicketsLength} новых талонов: ${newTickets.join(', ')}`
-            );
+            iDS_ARRAY.forEach(async (id) => {
+              await bot.sendSticker(id, stickers.talon);
+              bot.sendMessage(
+                  id,
+                  `На данный момент ${newTicketsLength} новых талонов: ${newTickets.join(', ')}`
+              );
+            })
 
             // add new services to tickets
             tickets.push(...newTickets)
