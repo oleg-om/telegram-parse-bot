@@ -24,7 +24,8 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
     try {
       var browser = await puppeteer.launch({
         headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
+        protocolTimeout: 240000 // 2 minutes
       });
       const page = await browser.newPage();
 
@@ -189,8 +190,12 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
       tickets = []
       console.log("error", e);
 
-      await bot.sendSticker(chatId, stickers.unknown);
-      bot.sendMessage(chatId, `Ошибка, напишите администратору: ${e}`);
+      iDS_ARRAY.forEach(async (id) => {
+        await bot.sendSticker(id, stickers.unknown);
+        bot.sendMessage(id, `Произошла ошибка. Бот продолжает работать, если ошибка повторится во время следующей итерации, попробуйте перезапустить бот. Если ошибка не повторилась, значит бот продолжает работать. Код ошибки: ${e}.`);
+      })
+
+
     }
   })();
 };
