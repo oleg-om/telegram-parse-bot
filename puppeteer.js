@@ -3,7 +3,7 @@ import { config } from "dotenv";
 import fs from "fs";
 
 config();
-const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
+const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
   const {
     WEBSITE,
     USER_LOGIN,
@@ -11,8 +11,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets) => {
     Q_CATEGORY,
     WANTED_SERVICE,
     SERVICES_CLASS,
-    CATEGORIES_CLASS,
-    iDS_ARRAY
+    CATEGORIES_CLASS
   } = env;
 
   (async () => {

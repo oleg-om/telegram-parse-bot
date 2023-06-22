@@ -75,11 +75,11 @@ bot.on("message", async (msg) => {
     })
 
 
-    puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets);
+    puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
 
     setInterval(() => {
       if (isRunning) {
-        puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets);
+        puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
       } else {
         clearInterval(this);
       }
