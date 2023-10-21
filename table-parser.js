@@ -1,11 +1,9 @@
 import PublicGoogleSheetsParser from "public-google-sheets-parser";
 import { config } from "dotenv";
-import TelegramApi from "node-telegram-bot-api";
 
 config();
 
-var { TELEGRAM_API_TOKEN, SHEET_ID, TABLE_ID, AVAILABLE_CHAT_IDS } =
-  process.env;
+var { SHEET_ID, TABLE_ID, AVAILABLE_CHAT_IDS } = process.env;
 const iDS_ARRAY = AVAILABLE_CHAT_IDS.split(",");
 
 const stickers = {
@@ -13,14 +11,9 @@ const stickers = {
     "https://tlgrm.ru/_/stickers/8eb/10f/8eb10f4b-8f4f-4958-aa48-80e7af90470a/6.webp",
 };
 
-let scriptInterval;
-let intervalTime = 900000; // 15 minutes;
-
 let rows;
 
-const bot = new TelegramApi(TELEGRAM_API_TOKEN, { polling: true });
-
-const sendMessage = async () => {
+const sendMessage = async (bot) => {
   iDS_ARRAY.forEach(async (id) => {
     await bot.sendSticker(id, stickers.newRow);
     console.log(`message was sent, rows are: ${rows}`);
@@ -28,7 +21,7 @@ const sendMessage = async () => {
   });
 };
 
-const parseTable = async () => {
+const parseTable = async (bot) => {
   const parser = new PublicGoogleSheetsParser(TABLE_ID);
   parser.sheetId = SHEET_ID;
   await parser.parse().then(async (items) => {
@@ -39,12 +32,10 @@ const parseTable = async () => {
         return null;
       } else {
         rows = rowsLength;
-        await sendMessage();
+        await sendMessage(bot);
       }
     }
   });
 };
 
-scriptInterval = setInterval(async () => {
-  await parseTable();
-}, intervalTime);
+export default parseTable;

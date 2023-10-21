@@ -1,6 +1,7 @@
 import TelegramApi from "node-telegram-bot-api";
 import { config } from "dotenv";
 import puppeteerScript from "./puppeteer.js";
+import parseTable from "./table-parser.js";
 
 config();
 
@@ -11,7 +12,7 @@ const {
   AVAILABLE_CHAT_IDS,
 } = process.env;
 
-const iDS_ARRAY = AVAILABLE_CHAT_IDS.split(',')
+const iDS_ARRAY = AVAILABLE_CHAT_IDS.split(",");
 
 const commands = [
   {
@@ -34,20 +35,20 @@ const commands = [
 
 const stickers = {
   start:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/7.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/7.webp",
   stop: "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/34.webp",
   talon:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/14.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/14.webp",
   alreadyStarted:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/13.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/13.webp",
   already2hours:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/3.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/3.webp",
   statusOf:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/27.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/27.webp",
   statusOn:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/32.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/32.webp",
   unknown:
-      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/12.webp",
+    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/12.webp",
 };
 
 const bot = new TelegramApi(TELEGRAM_API_TOKEN, { polling: true });
@@ -57,33 +58,39 @@ bot.setMyCommands(commands);
 let isRunning;
 
 const availableIds = AVAILABLE_CHAT_IDS;
-let tickets = []
+let tickets = [];
 
-let already2hoursTimeout
-let already2hoursInterval
-let scriptInterval
+let already2hoursTimeout;
+let already2hoursInterval;
+let scriptInterval;
 
 bot.on("message", async (msg) => {
   const text = msg?.text;
   const chatId = msg.chat.id;
-  console.log('chatId', chatId)
+  console.log("chatId", chatId);
 
   const startBot = async (idOfChat) => {
     isRunning = true;
-    const CHAT_ID = idOfChat
-    console.log('NEW startBot CHAT_ID', CHAT_ID)
+    const CHAT_ID = idOfChat;
+    console.log("NEW startBot CHAT_ID", CHAT_ID);
 
     iDS_ARRAY.forEach(async (id) => {
       await bot.sendSticker(id, stickers.start);
       bot.sendMessage(id, "Бот запущен, чтобы остановить напишите /stop");
-    })
-
+    });
 
     puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
 
     scriptInterval = setInterval(() => {
       if (isRunning) {
-        puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
+        puppeteerScript(
+          bot,
+          CHAT_ID,
+          process.env,
+          stickers,
+          tickets,
+          iDS_ARRAY,
+        );
       } else {
         clearInterval(scriptInterval);
       }
@@ -93,16 +100,16 @@ bot.on("message", async (msg) => {
       iDS_ARRAY.forEach(async (id) => {
         await bot.sendSticker(id, stickers.already2hours);
         console.log(
-            secondWarning ? "already many hours..." : "already 2 hours..."
+          secondWarning ? "already many hours..." : "already 2 hours...",
         );
 
         bot.sendMessage(
-            id,
-            `Бот запущен уже ${
-                secondWarning ? "много часов :(" : "2 часа"
-            }. Выключи бота командой /stop`
+          id,
+          `Бот запущен уже ${
+            secondWarning ? "много часов :(" : "2 часа"
+          }. Выключи бота командой /stop`,
         );
-      })
+      });
     };
     if (isRunning) {
       already2hoursTimeout = setTimeout(async () => {
@@ -121,34 +128,30 @@ bot.on("message", async (msg) => {
         }
       }, REQEST_TIMEOUT);
     } else {
-      clearTimeout(already2hoursTimeout)
-      clearInterval(already2hoursInterval)
+      clearTimeout(already2hoursTimeout);
+      clearInterval(already2hoursInterval);
     }
-
   };
 
   if (availableIds.includes(chatId)) {
     if (text === "/start") {
       if (isRunning) {
         bot.sendSticker(id, stickers.alreadyStarted);
-        bot.sendMessage(
-            id,
-            "Бот уже запущен, чтобы остановить напишите /stop"
-        );
+        bot.sendMessage(id, "Бот уже запущен, чтобы остановить напишите /stop");
         return;
       } else {
         startBot(chatId);
       }
     } else if (text === "/stop") {
       isRunning = false;
-      tickets = []
-      clearTimeout(already2hoursTimeout)
-      clearInterval(already2hoursInterval)
-      clearInterval(scriptInterval)
+      tickets = [];
+      clearTimeout(already2hoursTimeout);
+      clearInterval(already2hoursInterval);
+      clearInterval(scriptInterval);
       iDS_ARRAY.forEach(async (id) => {
         await bot.sendSticker(id, stickers.stop);
         bot.sendMessage(id, "Бот остановлен, для запуска напишите /start");
-      })
+      });
     } else if (text === "/identify") {
       bot.sendMessage(chatId, `Your chatId is ${chatId}`);
     } else if (text === "/status") {
@@ -162,13 +165,22 @@ bot.on("message", async (msg) => {
     } else {
       await bot.sendSticker(chatId, stickers.unknown);
       bot.sendMessage(
-          chatId,
-          `Неизвестная команда, я знаю команды ${commands
-              .map((it) => it.command)
-              .join(", ")}`
+        chatId,
+        `Неизвестная команда, я знаю команды ${commands
+          .map((it) => it.command)
+          .join(", ")}`,
       );
     }
   } else {
     bot.sendMessage(chatId, `Привет!`);
   }
 });
+
+// parse google sheet
+
+let sheetInterval;
+let sheetIntervalTime = 900000; // 15 minutes;
+
+sheetInterval = setInterval(async () => {
+  await parseTable(bot);
+}, sheetIntervalTime);
