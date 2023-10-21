@@ -17,7 +17,10 @@ const sendMessage = async (bot) => {
   iDS_ARRAY.forEach(async (id) => {
     await bot.sendSticker(id, stickers.newRow);
     console.log(`message was sent, rows are: ${rows}`);
-    bot.sendMessage(id, "Похоже, в гугл таблицу добавилась запись!");
+    bot.sendMessage(
+      id,
+      `Похоже, в гугл таблицу добавилась запись! Зайди проверь, https://docs.google.com/spreadsheets/d/${TABLE_ID}/edit#gid=${SHEET_ID}`,
+    );
   });
 };
 
