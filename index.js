@@ -34,20 +34,20 @@ const commands = [
 
 const stickers = {
   start:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/7.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/7.webp",
   stop: "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/34.webp",
   talon:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/14.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/14.webp",
   alreadyStarted:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/13.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/13.webp",
   already2hours:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/3.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/3.webp",
   statusOf:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/27.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/27.webp",
   statusOn:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/32.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/32.webp",
   unknown:
-    "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/12.webp",
+      "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/12.webp",
 };
 
 const bot = new TelegramApi(TELEGRAM_API_TOKEN, { polling: true });
@@ -58,6 +58,10 @@ let isRunning;
 
 const availableIds = AVAILABLE_CHAT_IDS;
 let tickets = []
+
+let already2hoursTimeout
+let already2hoursInterval
+let scriptInterval
 
 bot.on("message", async (msg) => {
   const text = msg?.text;
@@ -77,11 +81,11 @@ bot.on("message", async (msg) => {
 
     puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
 
-    setInterval(() => {
+    scriptInterval = setInterval(() => {
       if (isRunning) {
         puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
       } else {
-        clearInterval(this);
+        clearInterval(scriptInterval);
       }
     }, REQEST_INTERVAL);
 
@@ -100,32 +104,37 @@ bot.on("message", async (msg) => {
         );
       })
     };
+    if (isRunning) {
+      already2hoursTimeout = setTimeout(async () => {
+        if (isRunning) {
+          sendAlreadyTwoHours(false);
 
-    setTimeout(async () => {
-      if (isRunning) {
-        sendAlreadyTwoHours(false);
+          already2hoursInterval = setInterval(() => {
+            if (isRunning) {
+              sendAlreadyTwoHours(true);
+            } else {
+              clearInterval(already2hoursInterval);
+            }
+          }, REQEST_TIMEOUT);
+        } else {
+          clearTimeout(already2hoursTimeout);
+        }
+      }, REQEST_TIMEOUT);
+    } else {
+      clearTimeout(already2hoursTimeout)
+      clearInterval(already2hoursInterval)
+    }
 
-        setInterval(() => {
-          if (isRunning) {
-            sendAlreadyTwoHours(true);
-          } else {
-            clearInterval(this);
-          }
-        }, REQEST_TIMEOUT);
-      } else {
-        clearTimeout(this);
-      }
-    }, REQEST_TIMEOUT);
   };
 
   if (availableIds.includes(chatId)) {
     if (text === "/start") {
       if (isRunning) {
-          bot.sendSticker(id, stickers.alreadyStarted);
-          bot.sendMessage(
-              id,
-              "Бот уже запущен, чтобы остановить напишите /stop"
-          );
+        bot.sendSticker(id, stickers.alreadyStarted);
+        bot.sendMessage(
+            id,
+            "Бот уже запущен, чтобы остановить напишите /stop"
+        );
         return;
       } else {
         startBot(chatId);
@@ -133,6 +142,9 @@ bot.on("message", async (msg) => {
     } else if (text === "/stop") {
       isRunning = false;
       tickets = []
+      clearTimeout(already2hoursTimeout)
+      clearInterval(already2hoursInterval)
+      clearInterval(scriptInterval)
       iDS_ARRAY.forEach(async (id) => {
         await bot.sendSticker(id, stickers.stop);
         bot.sendMessage(id, "Бот остановлен, для запуска напишите /start");
@@ -150,10 +162,10 @@ bot.on("message", async (msg) => {
     } else {
       await bot.sendSticker(chatId, stickers.unknown);
       bot.sendMessage(
-        chatId,
-        `Неизвестная команда, я знаю команды ${commands
-          .map((it) => it.command)
-          .join(", ")}`
+          chatId,
+          `Неизвестная команда, я знаю команды ${commands
+              .map((it) => it.command)
+              .join(", ")}`
       );
     }
   } else {

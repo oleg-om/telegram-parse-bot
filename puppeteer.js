@@ -23,7 +23,9 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
     try {
       var browser = await puppeteer.launch({
         headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox",
+          // "--single-process",
+          "--no-zygote"],
         protocolTimeout: 240000 // 2 minutes
       });
       const page = await browser.newPage();
@@ -33,7 +35,7 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
 
       // read cookies
       const cookiesString = await fs.readFileSync("./cookies.json", (fsRead) =>
-        console.log("read cookies", fsRead)
+          console.log("read cookies", fsRead)
       );
 
       if (cookiesString) {
@@ -62,8 +64,8 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
 
 
         // wait loading is finished
-          const loadingSelector = "#blockerFX"
-          await page.$eval(loadingSelector, element=> element.style === { '0': 'opacity' })
+        const loadingSelector = "#blockerFX"
+        await page.$eval(loadingSelector, element=> element.style === { '0': 'opacity' })
 
         // category
 
@@ -77,19 +79,19 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
         const parsedTickets = await page.evaluate(
             (WANTED_SERVICE, SERVICES_CLASS) => {
 
-                const getNumber = (service, wanted) => {
-                    if (service) {
-                        return service.split(wanted).map((it) => it.trim()).find((it) => it)
-                    }   return service
-                }
+              const getNumber = (service, wanted) => {
+                if (service) {
+                  return service.split(wanted).map((it) => it.trim()).find((it) => it)
+                }   return service
+              }
 
               return Array.from(
                   document.querySelectorAll(`[data-ng-repeat="${SERVICES_CLASS}"]`),
                   (element) => {
-                      return {
+                    return {
                       name: getNumber(element?.textContent, WANTED_SERVICE),
                       show: element?.textContent.includes(WANTED_SERVICE)
-                  }}
+                    }}
               )?.filter((it) => it.show).map((it) => it?.name);
             },
             WANTED_SERVICE,
@@ -171,9 +173,9 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
         console.log("save cookies");
 
         await fs.writeFile(
-          "./cookies.json",
-          JSON.stringify(cookies, null, 2),
-          (fsWrite) => console.log("save cookies", fsWrite)
+            "./cookies.json",
+            JSON.stringify(cookies, null, 2),
+            (fsWrite) => console.log("save cookies", fsWrite)
         );
 
         console.log("get categories with login");
