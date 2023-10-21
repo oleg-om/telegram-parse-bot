@@ -2,3 +2,5 @@
 /node_modules
 /screenshots/*
 cookies.json
+/telegram/
+/settings.json
