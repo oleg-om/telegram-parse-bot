@@ -11,7 +11,6 @@ const logger = createLogger({
   level: "info",
   format: winston.format.json(),
   transports: [
-    new winston.transports.File({ filename: "logs/error.log", level: "error" }),
     new winston.transports.File({ filename: "logs/info.log", level: "info" }),
     new winston.transports.File({ filename: "logs/combined.log" }),
   ],
@@ -23,6 +22,9 @@ const stickers = {
 };
 
 let rows;
+
+//TODO saving data for logging
+let table;
 
 const sendMessage = async (bot) => {
   iDS_ARRAY.forEach(async (id) => {
@@ -44,29 +46,23 @@ const parseTable = async (bot) => {
       if (rowsLength === rows) {
         console.log("rows are same...");
 
-        logger.log({
-          level: "error",
-          rows: "rows are the same",
-          table: items?.slice(-10),
-          message: "not sent",
-          length: items?.length,
-          date: new Date(),
-        });
-
         return null;
       } else {
         if (rows) {
           await sendMessage(bot);
-          rows = rowsLength;
 
           logger.log({
             level: "info",
             rows: "new rows",
-            table: items?.slice(-10),
+            old_data: table,
+            new_data: items,
             message: "sent",
             length: items?.length,
             date: new Date(),
           });
+
+          rows = rowsLength;
+          table = items;
         } else {
           rows = rowsLength;
           console.log("there are no rows... maybe it was first init");
@@ -74,7 +70,6 @@ const parseTable = async (bot) => {
           logger.log({
             level: "info",
             rows: "new rows, but it is first rows",
-            table: items?.slice(-10),
             message: "no sent",
             length: items?.length,
             date: new Date(),
