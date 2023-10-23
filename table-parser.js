@@ -43,6 +43,7 @@ const parseTable = async (bot) => {
     if (rowsLength) {
       if (rowsLength === rows) {
         console.log("rows are same...");
+
         logger.log({
           level: "error",
           rows: "rows are the same",
@@ -54,17 +55,31 @@ const parseTable = async (bot) => {
 
         return null;
       } else {
-        rows = rowsLength;
-        await sendMessage(bot);
+        if (rows) {
+          await sendMessage(bot);
+          rows = rowsLength;
 
-        logger.log({
-          level: "info",
-          rows: "new rows",
-          table: items?.slice(-10),
-          message: "sent",
-          length: items?.length,
-          date: new Date(),
-        });
+          logger.log({
+            level: "info",
+            rows: "new rows",
+            table: items?.slice(-10),
+            message: "sent",
+            length: items?.length,
+            date: new Date(),
+          });
+        } else {
+          rows = rowsLength;
+          console.log("there are no rows... maybe it was first init");
+
+          logger.log({
+            level: "info",
+            rows: "new rows, but it is first rows",
+            table: items?.slice(-10),
+            message: "no sent",
+            length: items?.length,
+            date: new Date(),
+          });
+        }
       }
     }
   });
