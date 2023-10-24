@@ -65,6 +65,8 @@ const parseTable = async (bot) => {
           table = items;
         } else {
           rows = rowsLength;
+          table = items;
+
           console.log("there are no rows... maybe it was first init");
 
           logger.log({
