@@ -178,9 +178,9 @@ bot.on("message", async (msg) => {
 
 // parse google sheet
 
-let sheetInterval;
-let sheetIntervalTime = 900000; // 15 minutes;
+// let sheetInterval;
+// let sheetIntervalTime = 900000; // 15 minutes;
 
-sheetInterval = setInterval(async () => {
-  await parseTable(bot);
-}, sheetIntervalTime);
+// sheetInterval = setInterval(async () => {
+//   await parseTable(bot);
+// }, sheetIntervalTime);
