@@ -204,9 +204,9 @@ const puppeteerScript = (bot, chatId, env, stickers, tickets, iDS_ARRAY) => {
     } catch (e) {
       await browser.close();
       tickets = [];
-      console.log("error", e);
+      console.log("error 1", e);
 
-      sendError(iDS_ARRAY, bot);
+      sendError(iDS_ARRAY, bot, e);
     }
   })();
 };

@@ -9,7 +9,7 @@ export const excludeNewTickets = (existed, parsed) => {
   }, []);
 };
 
-export const sendError = (iDS_ARRAY, bot) => {
+export const sendError = (iDS_ARRAY, bot, e) => {
   iDS_ARRAY.forEach(async (id) => {
     await bot.sendSticker(id, stickers.unknown);
     bot.sendMessage(
