@@ -69,7 +69,7 @@ bot.on("message", async (msg) => {
 
         bot.sendMessage(
           id,
-          `Бот запущен уже ${
+          `Это я бот. Я запущен уже ${
             secondWarning ? "много часов :(" : "2 часа"
           }. Выключи бота командой /stop`,
         );
