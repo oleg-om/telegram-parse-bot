@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "name": "JSESSIONID",
+    "value": "9836846686BEEF257B99732BAB08ADF5",
+    "domain": "212.11.151.130",
+    "path": "/qms/",
+    "expires": -1,
+    "size": 42,
+    "httpOnly": true,
+    "secure": false,
+    "session": true,
+    "sameParty": false,
+    "sourceScheme": "NonSecure",
+    "sourcePort": 80
+  }
+]
