@@ -20,7 +20,7 @@ export const getCategoriesWithAxios = async (bot, tickets, cookies) => {
 
   const listQueries = async () => {
     try {
-      const res = await axios.get(1 + process.env.BACKEND_URL, {
+      const res = await axios.get(process.env.BACKEND_URL, {
         withCredentials: true,
         headers: {
           "Access-Control-Allow-Origin": "*",
