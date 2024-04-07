@@ -1,18 +1,28 @@
-export const commands = [
+import { config } from "dotenv";
+config();
+
+export const COMMANDS = {
+  START: "/start",
+  STOP: "/stop",
+  STATUS: "/status",
+  IDENTIFY: "/identify",
+};
+
+export const COMMANDS_LIST = [
   {
-    command: "/start",
+    command: COMMANDS.START,
     description: "Запустить бота",
   },
   {
-    command: "/stop",
+    command: COMMANDS.STOP,
     description: "Остановить бота",
   },
   {
-    command: "/status",
+    command: COMMANDS.STATUS,
     description: "Бот запущен?",
   },
   {
-    command: "/identify",
+    command: COMMANDS.IDENTIFY,
     description: "Идентификация",
   },
 ];
@@ -33,4 +43,17 @@ export const stickers = {
     "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/32.webp",
   unknown:
     "https://tlgrm.ru/_/stickers/bad/cbd/badcbdd2-589e-4319-b114-a17bdbb8968e/12.webp",
+};
+
+export const FILES = {
+  COOKIES: "./cookies.json",
+};
+
+export const SETTINGS = {
+  iDS_ARRAY: process.env.AVAILABLE_CHAT_IDS.split(","),
+};
+
+export const MOCK = {
+  BOT: { sendMessage: () => {}, sendSticker: () => {} },
+  TICKETS: [],
 };

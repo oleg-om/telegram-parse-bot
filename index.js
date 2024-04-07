@@ -1,8 +1,9 @@
 import TelegramApi from "node-telegram-bot-api";
 import { config } from "dotenv";
-import puppeteerScript from "./puppeteer.js";
+import parseQueries from "./parse.js";
 import parseTable from "./table-parser.js";
-import { commands, stickers } from "./consts.js";
+import { COMMANDS, COMMANDS_LIST, SETTINGS, stickers } from "./consts.js";
+import { sendMessage } from "./helpers.js";
 
 config();
 
@@ -13,11 +14,9 @@ const {
   AVAILABLE_CHAT_IDS,
 } = process.env;
 
-const iDS_ARRAY = AVAILABLE_CHAT_IDS.split(",");
-
 const bot = new TelegramApi(TELEGRAM_API_TOKEN, { polling: true });
 
-bot.setMyCommands(commands);
+bot.setMyCommands(COMMANDS_LIST);
 
 let isRunning;
 
@@ -35,54 +34,47 @@ bot.on("message", async (msg) => {
 
   const startBot = async (idOfChat) => {
     isRunning = true;
-    const CHAT_ID = idOfChat;
-    console.log("NEW startBot CHAT_ID", CHAT_ID);
+    console.log("NEW startBot CHAT_ID", idOfChat);
 
-    iDS_ARRAY.forEach(async (id) => {
-      await bot.sendSticker(id, stickers.start);
-      bot.sendMessage(id, "Бот запущен, чтобы остановить напишите /stop");
-    });
+    await sendMessage(
+      bot,
+      "Бот запущен, чтобы остановить напишите /stop",
+      stickers.start,
+    );
 
-    puppeteerScript(bot, CHAT_ID, process.env, stickers, tickets, iDS_ARRAY);
+    await parseQueries(bot, tickets);
 
-    scriptInterval = setInterval(() => {
+    scriptInterval = setInterval(async () => {
       if (isRunning) {
-        puppeteerScript(
-          bot,
-          CHAT_ID,
-          process.env,
-          stickers,
-          tickets,
-          iDS_ARRAY,
-        );
+        await parseQueries(bot, tickets);
       } else {
         clearInterval(scriptInterval);
       }
     }, REQEST_INTERVAL);
 
     const sendAlreadyTwoHours = async (secondWarning) => {
-      iDS_ARRAY.forEach(async (id) => {
-        await bot.sendSticker(id, stickers.already2hours);
+      for (const id of SETTINGS.iDS_ARRAY) {
         console.log(
           secondWarning ? "already many hours..." : "already 2 hours...",
         );
-
-        bot.sendMessage(
-          id,
+        await sendMessage(
+          bot,
           `Это я бот. Я запущен уже ${
             secondWarning ? "много часов :(" : "2 часа"
           }. Выключи бота командой /stop`,
+          stickers.already2hours,
+          id,
         );
-      });
+      }
     };
     if (isRunning) {
       already2hoursTimeout = setTimeout(async () => {
         if (isRunning) {
-          sendAlreadyTwoHours(false);
+          await sendAlreadyTwoHours(false);
 
-          already2hoursInterval = setInterval(() => {
+          already2hoursInterval = setInterval(async () => {
             if (isRunning) {
-              sendAlreadyTwoHours(true);
+              await sendAlreadyTwoHours(true);
             } else {
               clearInterval(already2hoursInterval);
             }
@@ -98,45 +90,51 @@ bot.on("message", async (msg) => {
   };
 
   if (availableIds.includes(chatId)) {
-    if (text === "/start") {
+    if (text === COMMANDS.START) {
       if (isRunning) {
-        bot.sendSticker(id, stickers.alreadyStarted);
-        bot.sendMessage(id, "Бот уже запущен, чтобы остановить напишите /stop");
-        return;
+        await sendMessage(
+          bot,
+          "Бот уже запущен, чтобы остановить напишите /stop",
+          stickers.alreadyStarted,
+          chatId,
+        );
       } else {
-        startBot(chatId);
+        await startBot(chatId);
       }
-    } else if (text === "/stop") {
+    } else if (text === COMMANDS.STOP) {
       isRunning = false;
       tickets = [];
       clearTimeout(already2hoursTimeout);
       clearInterval(already2hoursInterval);
       clearInterval(scriptInterval);
-      iDS_ARRAY.forEach(async (id) => {
-        await bot.sendSticker(id, stickers.stop);
-        bot.sendMessage(id, "Бот остановлен, для запуска напишите /start");
-      });
-    } else if (text === "/identify") {
-      bot.sendMessage(chatId, `Your chatId is ${chatId}`);
-    } else if (text === "/status") {
+
+      await sendMessage(
+        bot,
+        "Бот остановлен, для запуска напишите /start",
+        stickers.stop,
+      );
+    } else if (text === COMMANDS.IDENTIFY) {
+      await bot.sendMessage(chatId, `Your chatId is ${chatId}`);
+    } else if (text === COMMANDS.STATUS) {
       if (isRunning) {
         await bot.sendSticker(chatId, stickers.statusOn);
-        bot.sendMessage(chatId, "Бот запущен");
+        await bot.sendMessage(chatId, "Бот запущен");
       } else {
         await bot.sendSticker(chatId, stickers.statusOf);
-        bot.sendMessage(chatId, "Бот спит...");
+        await bot.sendMessage(chatId, "Бот спит...");
       }
     } else {
-      await bot.sendSticker(chatId, stickers.unknown);
-      bot.sendMessage(
+      await sendMessage(
+        bot,
+        `Неизвестная команда, я знаю команды ${COMMANDS_LIST.map(
+          (it) => it.command,
+        ).join(", ")}`,
+        stickers.unknown,
         chatId,
-        `Неизвестная команда, я знаю команды ${commands
-          .map((it) => it.command)
-          .join(", ")}`,
       );
     }
   } else {
-    bot.sendMessage(chatId, `Привет!`);
+    await sendMessage(bot, "Привет!", null, chatId);
   }
 });
 

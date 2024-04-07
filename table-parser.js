@@ -1,11 +1,11 @@
 import PublicGoogleSheetsParser from "public-google-sheets-parser";
 import { config } from "dotenv";
 import winston, { createLogger } from "winston";
+import { SETTINGS } from "./consts.js";
 
 config();
 
-var { SHEET_ID, TABLE_ID, AVAILABLE_CHAT_IDS } = process.env;
-const iDS_ARRAY = AVAILABLE_CHAT_IDS.split(",");
+var { SHEET_ID, TABLE_ID } = process.env;
 
 const logger = createLogger({
   level: "info",
@@ -27,14 +27,14 @@ let rows;
 let table;
 
 const sendMessage = async (bot) => {
-  iDS_ARRAY.forEach(async (id) => {
+  for (const id of SETTINGS.iDS_ARRAY) {
     await bot.sendSticker(id, stickers.newRow);
     console.log(`message was sent, rows are: ${rows}`);
-    bot.sendMessage(
+    await bot.sendMessage(
       id,
       `Похоже, в гугл таблицу добавилась запись! Зайди проверь, https://docs.google.com/spreadsheets/d/${TABLE_ID}/edit#gid=${SHEET_ID}`,
     );
-  });
+  }
 };
 
 const parseTable = async (bot) => {
