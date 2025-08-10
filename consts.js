@@ -6,6 +6,8 @@ export const COMMANDS = {
   STOP: "/stop",
   STATUS: "/status",
   IDENTIFY: "/identify",
+  BRANCH: "/branch",
+  BRANCHES: "/branches",
 };
 
 export const COMMANDS_LIST = [
@@ -24,6 +26,14 @@ export const COMMANDS_LIST = [
   {
     command: COMMANDS.IDENTIFY,
     description: "Идентификация",
+  },
+  {
+    command: COMMANDS.BRANCH,
+    description: "Показать текущую ветку",
+  },
+  {
+    command: COMMANDS.BRANCHES,
+    description: "Получить файл со списком всех веток",
   },
 ];
 
