@@ -79,71 +79,57 @@ export const getCookiesForRequest = async (cookiesParam = null) => {
 };
 
 /**
- * Выполняет запрос с автоматической авторизацией при ошибке 401 или таймауте > 10 сек
+ * Выполняет запрос с автоматической авторизацией при ошибке 401
  * @param {Function} requestFunction - Функция для выполнения запроса
  * @param {Object} bot - Объект бота для отправки ошибок
  * @param {Array} tickets - Массив талонов (опционально)
  * @param {Function} onSuccess - Callback при успешном выполнении
- * @param {number} timeout - Таймаут в миллисекундах (по умолчанию 10000)
  * @returns {Promise<any>} Результат выполнения запроса
  */
-export const executeWithAuth = async (requestFunction, bot, tickets = null, onSuccess = null, timeout = 10000) => {
-  const startTime = Date.now();
-  
+export const executeWithAuth = async (
+  requestFunction,
+  bot,
+  tickets = null,
+  onSuccess = null,
+) => {
   try {
-    // Создаем Promise с таймаутом
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("TIMEOUT")), timeout);
-    });
-    
-    // Выполняем запрос с таймаутом
-    const result = await Promise.race([
-      requestFunction(),
-      timeoutPromise
-    ]);
-    
-    const executionTime = Date.now() - startTime;
-    console.log(`Request completed successfully in ${executionTime}ms`);
-    
+    // Выполняем запрос
+    const result = await requestFunction();
+
     if (onSuccess) {
       await onSuccess(result);
     }
-    
+
     return result;
   } catch (error) {
-    // Проверяем на ошибку 401 или таймаут
-    if (error.message === "401" || error.message === "TIMEOUT") {
-      const executionTime = Date.now() - startTime;
-      const errorType = error.message === "TIMEOUT" ? "timeout" : "unauthorized";
-      console.log(`start login due to ${errorType} after ${executionTime}ms (timeout: ${timeout}ms)`);
-      
+    // Проверяем на ошибку 401 (неавторизован)
+    if (error?.response?.status === 401) {
+      console.log("Unauthorized request, attempting login...");
+
       try {
+        // Выполняем логин
         await login(tickets, bot);
-        // Повторяем запрос после авторизации
-        setTimeout(async () => {
-          try {
-            const retryResult = await requestFunction();
-            if (onSuccess) {
-              await onSuccess(retryResult);
-            }
-            return retryResult;
-          } catch (retryError) {
-            console.log("fatal error after login", retryError);
-            if (tickets) {
-              tickets.length = 0; // Очищаем массив талонов
-            }
-            await sendError(bot, retryError);
-          }
-        }, 100);
+        
+        // Повторяем запрос после успешной авторизации
+        console.log("Login successful, retrying request...");
+        const retryResult = await requestFunction();
+        
+        if (onSuccess) {
+          await onSuccess(retryResult);
+        }
+        
+        return retryResult;
       } catch (loginError) {
-        console.log("fatal error during login", loginError);
+        console.log("Fatal error during login:", loginError);
         if (tickets) {
           tickets.length = 0; // Очищаем массив талонов
         }
         await sendError(bot, loginError);
+        throw loginError;
       }
     } else {
-      throw error; // Пробрасываем ошибку, если это не 401 и не таймаут
+      // Если это не ошибка 401, пробрасываем ошибку дальше
+      throw error;
     }
   }
 };

@@ -5,7 +5,8 @@ import { FILES } from "./consts.js";
 
 config();
 
-export const login = async () => {
+export const login = async (tickets = null, bot = null) => {
+  console.log("Starting login process...");
   const { WEBSITE, USER_LOGIN, USER_PASSWORD } = process.env;
 
   const defaultTimeout = {
@@ -77,14 +78,17 @@ export const login = async () => {
         );
       }
 
+      console.log("Login completed successfully, cookies saved");
       return JSON.stringify(cookies, null, 2);
     } catch (e) {
       console.log("login error", e);
       throw new Error(e);
     }
   } catch (e) {
-    await browser.close();
     console.log("login error", e);
     throw new Error("Ошибка при логине: " + e);
+  } finally {
+    await browser.close();
+    console.log("Browser closed");
   }
 };

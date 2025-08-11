@@ -22,7 +22,6 @@ export const getBranches = async (bot) => {
     bot,
     null, // tickets
     null, // onSuccess callback
-    10000, // таймаут 10 секунд для получения списка веток
   );
 };
 
