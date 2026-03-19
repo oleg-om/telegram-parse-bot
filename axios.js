@@ -5,6 +5,7 @@ import {
   sendMessage,
   getCookiesForRequest,
 } from "./helpers.js";
+import { sendNewTicketsEmail } from "./email.js";
 import { stickers } from "./consts.js";
 import { getCurrentBranch } from "./branches.js";
 
@@ -67,13 +68,17 @@ export const getCategoriesWithAxios = async (bot, tickets, cookies) => {
 
     // send new tickets
     if (newTickets && newTicketsLength) {
-      await sendMessage(
-        bot,
-        `На данный момент ${newTicketsLength} новых талонов: ${newTickets.join(
-          ", ",
-        )}`,
-        stickers.talon,
-      );
+      const newTicketsText = `На данный момент ${newTicketsLength} новых талонов: ${newTickets.join(
+        ", ",
+      )}`;
+
+      await sendMessage(bot, newTicketsText, stickers.talon);
+
+      try {
+        await sendNewTicketsEmail(newTicketsText);
+      } catch (e) {
+        console.error("email notify failed:", e?.message || e);
+      }
 
       // add new services to tickets
       tickets.push(...newTickets);
