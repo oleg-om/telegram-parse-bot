@@ -4,6 +4,13 @@ import parseQueries from "./parse.js";
 import parseTable from "./table-parser.js";
 import { COMMANDS, COMMANDS_LIST, SETTINGS, stickers } from "./consts.js";
 import { sendMessage } from "./helpers.js";
+import {
+  getBranches,
+  getCurrentBranchInfo,
+  setCurrentBranch,
+  generateBranchesFile,
+  cleanupBranchesFile,
+} from "./branches.js";
 
 config();
 
@@ -36,9 +43,10 @@ bot.on("message", async (msg) => {
     isRunning = true;
     console.log("NEW startBot CHAT_ID", idOfChat);
 
+    const currentBranchInfo = await getCurrentBranchInfo(bot);
     await sendMessage(
       bot,
-      "Бот запущен, чтобы остановить напишите /stop",
+      `🚀 Бот запущен, чтобы остановить напишите /stop.\n\n🏢 Текущая ветка: ${currentBranchInfo.name} (ID: ${currentBranchInfo.id}), для изменения: ${COMMANDS.BRANCHES}`,
       stickers.start,
     );
 
@@ -59,7 +67,7 @@ bot.on("message", async (msg) => {
         );
         await sendMessage(
           bot,
-          `Это я бот. Я запущен уже ${
+          `😥 Это я бот. Я запущен уже ${
             secondWarning ? "много часов :(" : "2 часа"
           }. Выключи бота командой /stop`,
           stickers.already2hours,
@@ -94,7 +102,7 @@ bot.on("message", async (msg) => {
       if (isRunning) {
         await sendMessage(
           bot,
-          "Бот уже запущен, чтобы остановить напишите /stop",
+          `Бот уже запущен, чтобы остановить напишите /stop`,
           stickers.alreadyStarted,
           chatId,
         );
@@ -110,7 +118,7 @@ bot.on("message", async (msg) => {
 
       await sendMessage(
         bot,
-        "Бот остановлен, для запуска напишите /start",
+        "🛑 Бот остановлен, для запуска напишите /start",
         stickers.stop,
       );
     } else if (text === COMMANDS.IDENTIFY) {
@@ -123,6 +131,43 @@ bot.on("message", async (msg) => {
         await bot.sendSticker(chatId, stickers.statusOf);
         await bot.sendMessage(chatId, "Бот спит...");
       }
+    } else if (text === COMMANDS.BRANCH) {
+      const currentBranchInfo = await getCurrentBranchInfo(bot);
+      await bot.sendMessage(
+        chatId,
+        `🏢 Текущая ветка: ${currentBranchInfo.name} (ID: ${currentBranchInfo.id}), для изменения: ${COMMANDS.BRANCHES}`,
+      );
+    } else if (text.startsWith("/branch ")) {
+      // Обработка команды /branch <ID>
+      const branchId = parseInt(text.split(" ")[1]);
+      if (isNaN(branchId)) {
+        await bot.sendMessage(
+          chatId,
+          "❌ Неверный формат. Используйте: /branch <ID>",
+        );
+        return;
+      }
+
+      try {
+        const branches = await getBranches(bot);
+        const branchExists = branches.find((branch) => branch.id === branchId);
+
+        if (!branchExists) {
+          await bot.sendMessage(chatId, `❌ Ветка с ID ${branchId} не найдена`);
+          return;
+        }
+
+        setCurrentBranch(branchId);
+        await bot.sendMessage(
+          chatId,
+          `✅ Ветка успешно изменена на: ${branchExists.name} (ID: ${branchExists.id})`,
+        );
+      } catch (error) {
+        console.error("Ошибка при смене ветки:", error);
+        await bot.sendMessage(chatId, "Произошла ошибка при смене ветки");
+      }
+    } else if (text === COMMANDS.BRANCHES) {
+      await sendBranchesFile(bot, chatId);
     } else {
       await sendMessage(
         bot,
@@ -135,6 +180,79 @@ bot.on("message", async (msg) => {
     }
   } else {
     await sendMessage(bot, "Привет!", null, chatId);
+  }
+});
+
+// Функция для отправки файла со списком веток
+const sendBranchesFile = async (bot, chatId) => {
+  try {
+    await bot.sendMessage(chatId, "Генерирую файл со списком веток...");
+
+    const { filePath, fileName } = await generateBranchesFile(bot);
+
+    // Отправляем файл
+    await bot.sendDocument(chatId, filePath, {
+      caption:
+        "📋 Список всех доступных веток\n\nДля выбора ветки используйте команду /branch <ID>\nНапример: /branch 720",
+    });
+
+    // Удаляем временный файл
+    cleanupBranchesFile(filePath);
+  } catch (error) {
+    console.error("Ошибка при отправке файла веток:", error);
+    await bot.sendMessage(chatId, "Произошла ошибка при загрузке списка веток");
+  }
+};
+
+// Функция для показа меню выбора ветки (оставляем для совместимости, но не используем)
+const showBranchSelectionMenu = async (bot, chatId) => {
+  try {
+    const branches = await getBranches(bot);
+
+    if (branches?.length === 0) {
+      await bot.sendMessage(chatId, "Не удалось загрузить список веток");
+      return;
+    }
+
+    const keyboard = {
+      inline_keyboard: branches.map((branch) => [
+        {
+          text: `${branch.name} (${branch.id})`,
+          callback_data: `branch_${branch.id}`,
+        },
+      ]),
+    };
+
+    await bot.sendMessage(chatId, "Выберите ветку для парсинга талонов:", {
+      reply_markup: keyboard,
+    });
+  } catch (error) {
+    console.error("Ошибка при показе меню веток:", error);
+    await bot.sendMessage(chatId, "Произошла ошибка при загрузке списка веток");
+  }
+};
+
+// Обработчик callback-запросов от инлайн-клавиатуры
+bot.on("callback_query", async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  if (data.startsWith("branch_")) {
+    const branchId = parseInt(data.replace("branch_", ""));
+    setCurrentBranch(branchId);
+
+    const currentBranchInfo = await getCurrentBranchInfo(bot);
+    await bot.answerCallbackQuery(callbackQuery.id, {
+      text: `Ветка изменена на: ${currentBranchInfo.name}`,
+    });
+
+    await bot.editMessageText(
+      `✅ Ветка успешно изменена на: ${currentBranchInfo.name} (ID: ${currentBranchInfo.id})`,
+      {
+        chat_id: chatId,
+        message_id: callbackQuery.message.message_id,
+      },
+    );
   }
 });
 

@@ -1,33 +1,28 @@
 import axios from "axios";
 import { config } from "dotenv";
-import fs from "fs";
-import { excludeNewTickets, sendMessage } from "./helpers.js";
-import { FILES, stickers } from "./consts.js";
+import {
+  excludeNewTickets,
+  sendMessage,
+  getCookiesForRequest,
+} from "./helpers.js";
+import { stickers } from "./consts.js";
+import { getCurrentBranch } from "./branches.js";
 
 config();
 
 export const getCategoriesWithAxios = async (bot, tickets, cookies) => {
-  console.log("get queries with axios...");
-  // read cookies
-  const cookiesString = await fs.readFileSync(FILES.COOKIES, (fsRead) =>
-    console.log("read cookies from axios", fsRead),
-  );
-
-  const cookiesParsed = JSON.parse(cookies || cookiesString);
-  const cookieValue = cookiesParsed?.find((it) => it)?.value || "";
+  const currentBranch = getCurrentBranch();
+  console.log(`get queries with axios for branch ${currentBranch}...`);
 
   let parsedTickets = [];
 
   const listQueries = async () => {
     try {
-      const res = await axios.get(process.env.BACKEND_URL, {
-        withCredentials: true,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Content-Type": "application/json",
-          Cookie: `JSESSIONID=${cookieValue}`,
-        },
-      });
+      const requestConfig = await getCookiesForRequest(cookies);
+      const res = await axios.get(
+        process.env.QUERY_URL.replace("XXX", currentBranch),
+        requestConfig,
+      );
 
       parsedTickets = res?.data
         ?.filter((it) => it?.serviceId === Number(process.env.SERVICE_ID))
@@ -54,9 +49,7 @@ export const getCategoriesWithAxios = async (bot, tickets, cookies) => {
   const parsedTicketsLength = parsedTickets?.length;
 
   console.log(
-    "axios parsed tickets length: ",
-    parsedTicketsLength,
-    parsedTickets,
+    `axios parsed tickets length: ${parsedTicketsLength}, ${parsedTickets}. branch: ${currentBranch}`,
   );
 
   // work with tickets
