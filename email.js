@@ -50,8 +50,9 @@ export const sendNewTicketsEmail = async (text) => {
     return;
   }
 
-  const from = "Zjablik helper";
-  const subject = process.env.EMAIL_SUBJECT?.trim() || "Новые талоны";
+  const from = process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER;
+  const subject =
+    process.env.EMAIL_SUBJECT?.trim() || "Новые талоны (Zjablik helper)";
 
   await transporter.sendMail({
     from,
@@ -86,7 +87,7 @@ export const sendSmtpTestEmail = async () => {
     throw new Error("EMAIL_TO пустой");
   }
 
-  const from = "Zjablik helper";
+  const from = process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER;
 
   await transporter.sendMail({
     from,
