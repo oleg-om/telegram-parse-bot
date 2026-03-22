@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { SETTINGS, stickers, FILES } from "./consts.js";
 import { login } from "./login.js";
-import fs from "fs";
+import fs from "node:fs";
 
 config();
 

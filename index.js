@@ -14,6 +14,10 @@ import {
 
 config();
 
+console.log("=== Telegram Parse Bot ===");
+console.log("Node version:", process.version);
+console.log("Starting bot initialization...");
+
 const {
   TELEGRAM_API_TOKEN,
   REQEST_INTERVAL,
@@ -21,9 +25,25 @@ const {
   AVAILABLE_CHAT_IDS,
 } = process.env;
 
+if (!TELEGRAM_API_TOKEN) {
+  console.error("ERROR: TELEGRAM_API_TOKEN not set in .env");
+  process.exit(1);
+}
+
+if (!AVAILABLE_CHAT_IDS) {
+  console.error("ERROR: AVAILABLE_CHAT_IDS not set in .env");
+  process.exit(1);
+}
+
+console.log("Creating Telegram bot instance...");
 const bot = new TelegramApi(TELEGRAM_API_TOKEN, { polling: true });
 
 bot.setMyCommands(COMMANDS_LIST);
+
+console.log("Bot initialized successfully!");
+console.log("Allowed chat IDs:", AVAILABLE_CHAT_IDS);
+console.log("Request interval:", REQEST_INTERVAL, "ms");
+console.log("Waiting for messages...");
 
 let isRunning;
 
@@ -264,3 +284,19 @@ let sheetIntervalTime = 240000; // 4 minutes;
 sheetInterval = setInterval(async () => {
   await parseTable(bot);
 }, sheetIntervalTime);
+
+// Обработка необработанных ошибок
+process.on("uncaughtException", (error) => {
+  console.error("UNCAUGHT EXCEPTION:", error);
+  console.error(error.stack);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION at:", promise);
+  console.error("Reason:", reason);
+});
+
+// Обработка ошибок polling у бота
+bot.on("polling_error", (error) => {
+  console.error("POLLING ERROR:", error.code, error.message);
+});

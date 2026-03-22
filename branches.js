@@ -1,8 +1,8 @@
 import axios from "axios";
 import { config } from "dotenv";
 import { executeWithAuth, getCookiesForRequest } from "./helpers.js";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 config();
 

@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import puppeteer from "puppeteer";
-import fs from "fs";
+import fs from "node:fs";
 import { FILES } from "./consts.js";
 
 config();
